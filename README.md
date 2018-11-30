@@ -17,4 +17,4 @@ Helper functions to control your Spotify devices via Bash
 - curl
 
 ## Disclaimer
-This is Repo is NOT associated with spotify.
+This Repo is NOT associated with spotify.
