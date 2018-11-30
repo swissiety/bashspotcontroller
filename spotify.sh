@@ -4,14 +4,14 @@
 
 function req {
 
-	RET=$(request "$@" -H "Authorization: Bearer $TOKEN" );
+	RET=$(request -X "$@" -H "Authorization: Bearer $TOKEN" );
 
-	# wenn permission tot weil refreshtoken matsch-> neues token anfordern und nochmal
+	# if token is expired -> refresh the access token
 	#RET='{ "error": { "status": 401, "message": "The access token expired" } }';
 	if [[ "$RET" =~ (The access token expired) ]]; then
 		refresh_token;
 		#query again with refresehed token
-		RET=$(request "$@");
+		RET=$(request -X "$@");
 	fi
 	echo "$RET";
 }
@@ -103,21 +103,21 @@ function save_auth {
 
 
 function list_devices {
-	RES=$(req -X GET https://api.spotify.com/v1/me/player/devices -d "");
+	RES=$(req GET https://api.spotify.com/v1/me/player/devices -d "");
 	echo "$RES";
 }
 
 function activate_device {
 	ID="$1";
 
-	RES=$(req -X PUT "https://api.spotify.com/v1/me/player" -H "Content-Type: application/json" --data "{\"device_ids\":[\"${ID}\"]}" --data play=true );
+	RES=$(req PUT "https://api.spotify.com/v1/me/player" -H "Content-Type: application/json" -d "{\"device_ids\":[\"${ID}\"]}" -d play=true );
 	echo "$RES";
 
 }
 
 function volume {
 	PERCENT="$1";
-	RES=$(req -X PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$PERCENT" -d "");
+	RES=$(req PUT "https://api.spotify.com/v1/me/player/volume?volume_percent=$PERCENT" -d "");
 	echo "$RES";
 
 }
@@ -126,10 +126,10 @@ function play {
 
 	if [ "$1" = "" ]; then
 		#play current song
-		RES=$(req -X PUT "https://api.spotify.com/v1/me/player/play" -d "");
+		RES=$(req PUT "https://api.spotify.com/v1/me/player/play" -d "");
 	else
-		#play an allbum/playlist whatever is given 
-		RES=$(req -X PUT "https://api.spotify.com/v1/me/player/play" -H "Accept: application/json" -H "Content-Type: application/json" -d "{\"context_uri\": \"$1\"}" );
+		#play a track
+		RES=$(req PUT "https://api.spotify.com/v1/me/player/play" -H "Accept: application/json" -H "Content-Type: application/json" -d "{\"uris\": [\"$1\"]}" );
 
 	fi
 	echo "$RES";
@@ -137,32 +137,38 @@ function play {
 
 }
 
+function play_list {
+	#play an allbum/playlist whatever is given 
+	RES=$(req PUT "https://api.spotify.com/v1/me/player/play" -H "Accept: application/json" -H "Content-Type: application/json" -d "{\"context_uri\": \"$1\"}" );
+	echo "$RES";
+}
+
 function pause {
-	RES=$(req -X PUT "https://api.spotify.com/v1/me/player/pause" -d "" )
+	RES=$(req PUT "https://api.spotify.com/v1/me/player/pause" -d "" )
 	echo "$RES";
 }
 
 function previous {
-	RES=$(req -X POST "https://api.spotify.com/v1/me/player/previous" -d "");
+	RES=$(req POST "https://api.spotify.com/v1/me/player/previous" -d "");
 	echo "$RES";
 
 }
 
 function next {
-	RES=$(req -X POST "https://api.spotify.com/v1/me/player/next" -d "");
+	RES=$(req POST "https://api.spotify.com/v1/me/player/next" -d "");
 	echo "$RES";
 }
 
 
 
 function my_playlists {
-	RES=$(req -X GET "https://api.spotify.com/v1/me/playlists");
+	RES=$(req GET "https://api.spotify.com/v1/me/playlists");
 	if [[ "$RES" =~ \"href\"\ :\ \"[^\"]* ]]; then
 		URL=${BASH_REMATCH[0]:10}
 		echo "URL: $URL";
 
 		#get first entries
-		local RET=$(req -X GET "$URL");
+		local RET=$(req GET "$URL");
 
 		#local NAME=();
 		#local ID=();
@@ -171,7 +177,7 @@ function my_playlists {
 		while [ "$URL" != "null" ]; do
 			if [[ "$RET" =~ \"next\"\ :\ (\"[^\"]*|null) ]]; then
 				URL=${BASH_REMATCH[0]:10}
-				local RET=$(req -X GET "$URL");
+				local RET=$(req GET "$URL");
 				echo "$RET";
 
 				# TODO: filter uri and name
@@ -189,8 +195,7 @@ function load_credentials {
 	# auth data exists?
 	if [ ! -e .spotifyconfig ]; then
 		echo "insert CLIENTID and CLIENTSECRET from your spotify developer account into .spotifyconfig";
-		read
-
+		# TODO: ui for inserting
 		save_auth;
 		exit 0;
 	fi
