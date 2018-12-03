@@ -9,9 +9,10 @@ function req {
 	# if token is expired -> refresh the access token
 	#RET='{ "error": { "status": 401, "message": "The access token expired" } }';
 	if [[ "$RET" =~ (The access token expired) ]]; then
+		#echo "> access token expired -> get new key!";
 		refresh_token;
 		#query again with refresehed token
-		RET=$(request -X "$@");
+		RET=$(request -X "$@" -H "Authorization: Bearer $TOKEN" );
 	fi
 	echo "$RET";
 }
@@ -32,26 +33,25 @@ function get_accesscode {
 function token_for_code {
 
 	if [[ "$1" =~ code=[a-zA-Z0-9_\-]* ]]; then
-		CODE=${BASH_REMATCH[0]:5}
+		CODE="${BASH_REMATCH[0]:5}"
 	else
 		echo "no access granted or wrong url?";
 		exit;
 	fi
 
 	RES=$(request -H "Authorization: Basic ${B64}" -d grant_type=authorization_code -d code=$CODE -d redirect_uri=$REDIRECTURL https://accounts.spotify.com/api/token);
-
 	#echo $RES;
 
 	ERR=0;
 	if [[ "$RES" =~ \"access_token\":\"[a-zA-Z0-9_\-]* ]]; then
-		TOKEN=${BASH_REMATCH[0]:16};
+		TOKEN="${BASH_REMATCH[0]:16}";
 		echo "$TOKEN";
 	else
 		ERR=1;
 	fi
 
 	if [[ "$RES" =~ \"refresh_token\":\"[a-zA-Z0-9_\-]* ]]; then
-		local RFT=${BASH_REMATCH[0]:17};
+		local RFT="${BASH_REMATCH[0]:17}";
 		echo "$RFT";
 	else
 		ERR=1;
@@ -69,17 +69,17 @@ function token_for_code {
 
 
 function refresh_token {
+	echo "TOKEN: $TOKEN"
 
-	RES=$(request -H "Authorization: Basic $B64" -d grant_type=refresh_token -d refresh_token=$REFRESH_TOKEN https://accounts.spotify.com/api/token);
 
-	echo "$RES";
+	RES=$(request -H "Authorization: Basic $B64" -d grant_type=refresh_token -d "refresh_token=$REFRESH_TOKEN" https://accounts.spotify.com/api/token);
+
+#	echo "$RES";
 	if [[ "$RES" =~ \"access_token\":\"[a-zA-Z0-9_\-]* ]]; then
 		TOKEN="${BASH_REMATCH[0]:16}";
-		#echo $TOKEN;
 		save_auth "$TOKEN" "$REFRESH_TOKEN";
-
 	else
-		echo "Error:";
+		echo "Error getting a new accesstoken:";
 		echo "$RES";
 		exit;
 	fi
@@ -164,7 +164,7 @@ function next {
 function my_playlists {
 	RES=$(req GET "https://api.spotify.com/v1/me/playlists");
 	if [[ "$RES" =~ \"href\"\ :\ \"[^\"]* ]]; then
-		URL=${BASH_REMATCH[0]:10}
+		URL="${BASH_REMATCH[0]:10}";
 		echo "URL: $URL";
 
 		#get first entries
@@ -176,7 +176,7 @@ function my_playlists {
 		# get more playlist entries
 		while [ "$URL" != "null" ]; do
 			if [[ "$RET" =~ \"next\"\ :\ (\"[^\"]*|null) ]]; then
-				URL=${BASH_REMATCH[0]:10}
+				URL="${BASH_REMATCH[0]:10}"
 				local RET=$(req GET "$URL");
 				echo "$RET";
 
