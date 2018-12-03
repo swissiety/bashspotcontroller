@@ -6,10 +6,10 @@ Helper functions to control your Spotify devices via Bash
 
 1. (register and) log into your Spotify Developer Account.
 2. go to your Dashboard and create a new App.
-3. execute the bashspotcontroller-example.sh.
-4. The file ".spotifyconfig" is created.
-5. Insert the given ClientID and ClientSecret into the corresponding variables (CLIENTID, SECRET) in ".spotifyconfig".
-6. explore the example.
+3. execute the **bashspotcontroller-example.sh** the file **.spotifyconfig** is created.
+4. insert the given ClientID and ClientSecret into the corresponding variables (CLIENTID, SECRET) in **.spotifyconfig**.
+5. explore the example **bashspotcontroller-example.sh**.
+6. build something cool.
 
 ## Dependencies
 - bash
@@ -17,4 +17,4 @@ Helper functions to control your Spotify devices via Bash
 - curl
 
 ## Disclaimer
-This Repo is NOT associated with spotify.
+This Repo is **NOT** associated with spotify.
