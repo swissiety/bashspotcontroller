@@ -45,14 +45,14 @@ function token_for_code {
 	ERR=0;
 	if [[ "$RES" =~ \"access_token\":\"[a-zA-Z0-9_\-]* ]]; then
 		TOKEN="${BASH_REMATCH[0]:16}";
-		echo "$TOKEN";
+		#echo "$TOKEN";
 	else
 		ERR=1;
 	fi
 
 	if [[ "$RES" =~ \"refresh_token\":\"[a-zA-Z0-9_\-]* ]]; then
 		local RFT="${BASH_REMATCH[0]:17}";
-		echo "$RFT";
+		#echo "$RFT";
 	else
 		ERR=1;
 	fi
@@ -69,12 +69,10 @@ function token_for_code {
 
 
 function refresh_token {
-	echo "TOKEN: $TOKEN"
-
 
 	RES=$(request -H "Authorization: Basic $B64" -d grant_type=refresh_token -d "refresh_token=$REFRESH_TOKEN" https://accounts.spotify.com/api/token);
-
 #	echo "$RES";
+
 	if [[ "$RES" =~ \"access_token\":\"[a-zA-Z0-9_\-]* ]]; then
 		TOKEN="${BASH_REMATCH[0]:16}";
 		save_auth "$TOKEN" "$REFRESH_TOKEN";
@@ -170,9 +168,6 @@ function my_playlists {
 		#get first entries
 		local RET=$(req GET "$URL");
 
-		#local NAME=();
-		#local ID=();
-
 		# get more playlist entries
 		while [ "$URL" != "null" ]; do
 			if [[ "$RET" =~ \"next\"\ :\ (\"[^\"]*|null) ]]; then
@@ -207,7 +202,7 @@ function load_credentials {
 		exit;
 	fi
 
-	B64=$( echo -n "$CLIENTID:$SECRET" | openssl base64 -A);
+	B64=$(echo -n "$CLIENTID:$SECRET" | openssl base64 -A);
 
 	if [ "$TOKEN" = "" ]; then
 		get_accesscode;
